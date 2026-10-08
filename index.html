@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eZDispatch Redesign Prototype</title>
+<style>
+:root{
+  --navy:#0e2a47; --navy2:#16395f; --blue:#1a6ae0; --blue-soft:#e8f1fd; --bg:#eef3f8; --card:#fff;
+  --line:#dbe3ec; --text:#1b2733; --muted:#6b7a89; --green:#1f9d55; --green-soft:#e6f6ec;
+  --red:#d93636; --red-soft:#fdecec; --amber:#b86e00; --amber-soft:#fff4e0; --purple:#6a4fd8; --orange:#f07c1b; --teal:#16a085;
+  --page:#dde5ee;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Segoe UI",Roboto,-apple-system,Helvetica,Arial,sans-serif;color:var(--text);background:var(--page);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:14px}
+
+/* ---------- page shell ---------- */
+.topbar{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.topbar h1{font-size:17px;margin:0;font-weight:600}
+.topbar .tag{font-size:12px;background:rgba(255,255,255,.12);padding:3px 9px;border-radius:12px}
+.topbar .spacer{flex:1}
+.topbar .mk{font-size:12px;opacity:.85}
+.wrap{display:flex;gap:24px;padding:20px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+
+/* ---------- phone ---------- */
+.device{width:392px;flex:0 0 auto;background:#10161d;border-radius:38px;padding:12px;box-shadow:0 20px 50px rgba(14,42,71,.35);position:sticky;top:16px}
+.device-label{color:#8ea0b3;font-size:11px;text-align:center;margin:-2px 0 6px}
+.phone{position:relative;height:790px;border-radius:28px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+#screen{display:flex;flex-direction:column;height:100%}
+.statusbar{background:var(--navy);color:#fff;font-size:12px;display:flex;justify-content:space-between;padding:8px 18px 2px}
+.appbar{background:var(--navy);color:#fff;display:flex;align-items:center;gap:8px;padding:8px 12px 12px}
+.icon-btn{background:none;border:0;color:inherit;padding:4px;display:flex;border-radius:6px}
+.icon-btn:hover{background:rgba(255,255,255,.1)}
+.brand{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.logo{font-size:19px;font-weight:700;letter-spacing:.2px;line-height:1.05}
+.logo span{color:#4aa3ff}
+.brand .sub{font-size:11.5px;opacity:.85}
+.env{font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;display:flex;align-items:center;gap:5px}
+.env::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.env.PROD{background:#123f2d;color:#3ddc84}
+.env.QAS{background:#4a3500;color:#ffc53d}
+.utilbar{display:flex;align-items:center;gap:6px;background:var(--navy2);color:#cfe0f3;font-size:11.5px;padding:5px 10px}
+.utilbar button{background:rgba(255,255,255,.08);border:0;color:#e6f0fb;font-size:11.5px;padding:3px 8px;border-radius:10px;display:flex;align-items:center;gap:4px}
+.utilbar button:hover{background:rgba(255,255,255,.18)}
+.utilbar .grow{flex:1}
+.spin{animation:spin 1s linear infinite;display:inline-flex}
+@keyframes spin{to{transform:rotate(360deg)}}
+.content{flex:1;overflow-y:auto;padding:12px}
+.footer{background:#fff;border-top:1px solid var(--line);padding:10px 12px}
+.navbar{background:var(--navy);color:#b9cbe0;display:flex;justify-content:space-around;font-size:10.5px;padding:7px 4px}
+.navbar div{display:flex;flex-direction:column;align-items:center;gap:1px}
+.navbar b{color:#fff;font-weight:600}
+
+/* ---------- common components ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.card.ok{background:#f3faf6;border-color:#bfe5cd}
+.lbl{font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.row{display:flex;align-items:center;gap:8px}
+.between{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.big{font-size:18px;font-weight:700}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.scanbox{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.scanbox:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.scanbox input{border:0;outline:0;flex:1;min-width:0;background:transparent}
+.scanbox svg{color:var(--muted);flex:0 0 auto}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;gap:5px;align-items:flex-start}
+.btn{border:0;border-radius:10px;padding:11px 16px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.primary:hover{background:#155bc3}
+.btn.primary:disabled{background:#9dbbe7;cursor:not-allowed}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.block{width:100%}
+.btn.sm{padding:6px 10px;font-size:12.5px;border-radius:8px}
+.pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.pill.green{background:var(--green-soft);color:var(--green)}
+.pill.red{background:var(--red-soft);color:var(--red)}
+.pill.amber{background:var(--amber-soft);color:var(--amber)}
+.pill.blue{background:var(--blue-soft);color:var(--blue)}
+.pill.purple{background:#efeafe;color:var(--purple)}
+.pill.grey{background:#eef1f4;color:var(--muted)}
+.banner{border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;display:flex;gap:8px;align-items:flex-start}
+.banner.error{background:var(--red-soft);color:#9b1c1c;border:1px solid #f5c2c2;animation:shake .35s}
+.banner.success{background:var(--green-soft);color:#146c3b;border:1px solid #bfe5cd}
+.banner.info{background:var(--blue-soft);color:#174ea6;border:1px solid #c8dcf8}
+.banner.warn{background:var(--amber-soft);color:#7a4a00;border:1px solid #f3d9a4}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.kv .k{font-size:11px;color:var(--muted)}
+.kv .v{font-weight:600;font-size:13.5px}
+.hulist{margin-top:8px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.hurow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-top:1px solid var(--line);font-size:13px}
+.hurow:first-child{border-top:0}
+.hurow.hl{background:#eef7f1}
+.hurow .n{width:22px;height:22px;border-radius:6px;background:#eef1f4;font-size:11px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.hurow .code{flex:1;font-weight:600;display:flex;align-items:center;gap:6px}
+.st-ok{color:var(--green);display:flex}
+.st-no{color:var(--red);display:flex}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--blue-soft);color:var(--blue);border-radius:14px;padding:4px 6px 4px 10px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:4px}
+.chip.tid{background:#efeafe;color:var(--purple)}
+.chip button{border:0;background:rgba(0,0,0,.06);color:inherit;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;padding:0}
+.tabs{display:flex;background:#e3eaf2;border-radius:10px;padding:3px;margin-bottom:10px}
+.tabs button{flex:1;border:0;background:none;padding:9px;border-radius:8px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px}
+.tabs button.on{background:var(--blue);color:#fff}
+.tabs .dot{background:var(--red);color:#fff;border-radius:8px;font-size:10px;padding:0 5px}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;font-size:11px;color:var(--muted);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line)}
+table.t td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.t tr.sub td{background:#fafbfd;padding:4px 6px 4px 28px;font-size:12px;color:var(--muted);border-bottom:1px dashed var(--line)}
+table.t tr.sel td{background:#f2f7fe}
+table.t tr.excl td{opacity:.55}
+.caret{border:0;background:none;padding:0 4px;color:var(--muted);font-size:12px;width:20px}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--blue);cursor:pointer}
+.obdcard{border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:8px;overflow:hidden}
+.obdcard.excl{background:#f6f7f9}
+.obdcard.excl .obdhead .num{text-decoration:line-through;color:var(--muted)}
+.obdhead{display:flex;align-items:center;gap:8px;padding:10px;cursor:pointer}
+.obdhead .num{font-weight:700;font-size:15px}
+.obdhead .meta{font-size:11.5px;color:var(--muted)}
+.obdbody{border-top:1px solid var(--line)}
+.exclbox{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);line-height:1.1;text-align:left;max-width:92px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600}
+.field label .req{color:var(--red)}
+.field input,.field select{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;outline:0}
+.field input:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.field.err input,.field.err select{border-color:var(--red)}
+.field .msg{font-size:11.5px;margin-top:4px;display:flex;gap:4px;align-items:center}
+.field .msg.ok{color:var(--green)} .field .msg.bad{color:var(--red)} .field .msg.info{color:var(--muted)}
+.defaultnote{font-size:10.5px;background:var(--blue-soft);color:var(--blue);padding:1px 6px;border-radius:8px;margin-left:6px;font-weight:600}
+.summary{display:flex;gap:6px;margin-bottom:10px}
+.summary div{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.summary b{display:block;font-size:17px}
+.summary span{font-size:10.5px;color:var(--muted)}
+
+/* home */
+.usercard{display:flex;align-items:center;gap:10px}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);border-radius:14px;padding:14px 12px;background:#fff;text-align:left;position:relative;min-height:150px;border-bottom-width:4px}
+.tile:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(14,42,71,.1)}
+.tile .ic{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:10px}
+.tile h3{margin:0 0 4px;font-size:15px}
+.tile p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.35}
+.tile .chev{position:absolute;right:10px;top:12px;color:var(--muted)}
+.tile .tbc{position:absolute;right:10px;bottom:10px}
+.menu-item{display:flex;align-items:center;gap:12px;padding:16px 14px;border-radius:12px;border:1px solid #cfe0f7;background:linear-gradient(135deg,#eef5ff,#f8fbff);width:100%;text-align:left;margin-bottom:10px}
+.menu-item h3{margin:0 0 3px;font-size:15px}
+.menu-item p{margin:0;font-size:12px;color:var(--muted)}
+.menu-item .ic{width:48px;height:48px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--blue);flex:0 0 auto}
+
+/* modal + toast */
+.overlay{position:absolute;inset:0;background:rgba(10,25,45,.5);display:flex;align-items:flex-end;z-index:20}
+.sheet{background:#fff;border-radius:18px 18px 0 0;padding:16px;width:100%;max-height:85%;overflow:auto;animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.sheet h3{margin:0 0 10px;font-size:16px}
+.sheet .acts{display:flex;gap:8px;margin-top:14px}
+.sheet .acts .btn{flex:1}
+.userpick{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;width:100%;background:#fff;text-align:left}
+.userpick.on{border-color:var(--blue);background:var(--blue-soft)}
+#toast{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:#1f2d3b;color:#fff;padding:9px 14px;border-radius:10px;font-size:12.5px;max-width:88%;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;text-align:center}
+#toast.show{opacity:1}
+.loading{position:absolute;inset:0;background:rgba(255,255,255,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:25;font-weight:600;color:var(--navy)}
+.loading .ring{width:40px;height:40px;border:4px solid var(--blue-soft);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+.done-hero{text-align:center;padding:14px 8px 4px}
+.done-hero .ok{width:64px;height:64px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.timeline{border-left:2px solid var(--line);margin-left:8px;padding-left:14px}
+.timeline div{position:relative;margin-bottom:10px;font-size:12.5px}
+.timeline div::before{content:"";position:absolute;left:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--green)}
+.sectitle{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 2px 6px}
+/* ---------- RE-DELIVERY DELTA (yellow = new) ---------- */
+.hl{background:#fff176;padding:0 3px;border-radius:3px}
+.pill.delta{background:#fff176;color:#5a4a00;border:1px solid #e6c200}
+.delta-box{background:#fffbd6!important;border:2px solid #f2c94c!important}
+.tile.delta-tile{grid-column:1/-1;min-height:0;display:flex;align-items:center;gap:12px;background:#fffbd6;border-color:#f2c94c;border-bottom-color:#e6a700}
+.tile.delta-tile .ic{margin:0;flex:0 0 auto}
+.tile.delta-tile .newtag{position:absolute;right:34px;top:12px}
+.steps li.delta-step{background:#fffbd6;border:1px dashed #e6c200}
+.steps li.delta-step.cur{background:#fff3a3}
+.bcgroup.delta-box{padding:8px;border-radius:10px}
+.legend-delta{background:#fff176!important;color:#4a3d00!important;font-weight:700}
+/* ---------- login ---------- */
+.login-content{padding:0!important;display:flex;flex-direction:column;background:linear-gradient(160deg,#0e2a47,#16395f 55%,#0e2a47)}
+.loginscreen{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:26px 22px;color:#fff}
+.login-brand{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:4px}
+.login-brand .logo span{color:#4aa3ff}
+.login-tag{font-size:12.5px;color:#b9cbe0}
+.login-card{background:#fff;border-radius:16px;padding:18px 16px 16px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.login-card .field{margin-bottom:12px}
+.login-foot{text-align:center;font-size:11px;color:var(--muted);margin-top:12px}
+.login-hint{text-align:center;font-size:11px;color:#9fb6cf;line-height:1.5;padding:0 6px}
+
+/* ---------- side panel ---------- */
+.side{flex:1 1 440px;max-width:600px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.panel{background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(14,42,71,.08);padding:14px 16px}
+.panel h2{font-size:14px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.panel .desc{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:flex;gap:10px;padding:9px 8px;border-radius:10px;align-items:flex-start}
+.steps li.cur{background:var(--blue-soft)}
+.steps .num{width:24px;height:24px;border-radius:50%;background:#e3eaf2;color:var(--navy);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.steps li.done .num{background:var(--green);color:#fff}
+.steps .txt{flex:1;font-size:12.5px;line-height:1.45}
+.steps .txt b{font-size:13px}
+.steps code,.panel code{background:#eef1f4;padding:0 4px;border-radius:4px;font-size:12px}
+.barcodes{display:flex;flex-wrap:wrap;gap:8px}
+.bc{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px 5px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px}
+.bc:hover{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.bc .bars{height:22px;width:78px;background:repeating-linear-gradient(90deg,#1b2733 0 2px,transparent 2px 3px,#1b2733 3px 4px,transparent 4px 7px,#1b2733 7px 10px,transparent 10px 11px)}
+.bc .c{font-size:11.5px;font-weight:700;font-family:Consolas,monospace}
+.bc .d{font-size:10px;color:var(--muted);max-width:120px;text-align:center;line-height:1.2}
+.bc.used{opacity:.45}
+.bc.test .bars{background:repeating-linear-gradient(90deg,var(--red) 0 2px,transparent 2px 4px,var(--red) 4px 5px,transparent 5px 8px)}
+.bcgroup{margin-bottom:10px}
+.bcgroup .gt{font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.log{max-height:260px;overflow:auto;font-size:12px}
+.log div{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f0f3f6;align-items:flex-start}
+.log .tm{color:var(--muted);font-family:Consolas,monospace;font-size:11px;padding-top:1px}
+.sys{font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap}
+.sys.HANA{background:#e8f1fd;color:#1a6ae0}.sys.SAP{background:#e6f6ec;color:#1f9d55}.sys.IAS{background:#efeafe;color:#6a4fd8}
+.sys.PlanetPress{background:#fff4e0;color:#b86e00}.sys.APP{background:#eef1f4;color:#44515e}.sys.T4i{background:#fde9f1;color:#b8266a}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f3f6;font-size:13px}
+.setrow:last-child{border-bottom:0}
+.seg{display:flex;background:#eef1f4;border-radius:8px;padding:2px}
+.seg button{border:0;background:none;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.openitem{font-size:10px;background:var(--amber-soft);color:var(--amber);padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px}
+
+@media (max-width:900px){
+  .wrap{padding:12px 10px}
+  .device{position:static}
+}
+@media (max-width:430px){
+  .device{width:100%;padding:0;border-radius:0;background:none;box-shadow:none}
+  .device-label{display:none}
+  .phone{border-radius:14px;height:760px}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>eZDispatch Redesign — E2E Prototype</h1>
+  <span class="tag">Receive → Manage Route → Dispatch → Re-Delivery</span>
+  <span class="tag legend-delta">Yellow = new Re-Delivery module (delta)</span>
+  <span class="spacer"></span>
+  <span class="mk">Based on the MoM &amp; to-be mockups · clickable demo, dummy data</span>
+</div>
+
+<div class="wrap">
+  <div class="device">
+    <div class="device-label" id="devlabel">Handheld</div>
+    <div class="phone" id="phone">
+      <div id="screen"></div>
+      <div id="toast"></div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <section class="panel">
+      <h2>🧭 Guided E2E walkthrough</h2>
+      <p class="desc">Follow the steps in order. Each step turns green when you've done it. Click a step's title to jump to that screen.</p>
+      <ol class="steps" id="steps"></ol>
+    </section>
+    <section class="panel">
+      <h2>📟 Scanner simulator</h2>
+      <p class="desc" id="scanDesc">Tap a barcode to "scan" it into the active field, or type in the phone and press Enter.</p>
+      <div id="barcodes"></div>
+    </section>
+    <section class="panel">
+      <h2>🔗 Backend events</h2>
+      <p class="desc">What each action would trigger in IAS, BTP HANA, SAP, PlanetPress and 4i.</p>
+      <div class="log" id="log"></div>
+    </section>
+    <section class="panel">
+      <h2>⚙️ Prototype settings</h2>
+      <div id="settings"></div>
+    </section>
+  </aside>
+</div>
+
+<script>
+/* ================= ICONS ================= */
+const I = {
+  back:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>',
+  menu:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  truck:'<svg width="34" height="26" viewBox="0 0 34 26" fill="none"><rect x="1" y="4" width="19" height="14" rx="2" fill="#fff"/><path d="M20 8h7l5 5v5h-12z" fill="#fff"/><rect x="22" y="9.5" width="5" height="3.5" rx=".5" fill="#0e2a47"/><circle cx="8" cy="20" r="3.2" fill="#fff" stroke="#0e2a47" stroke-width="1.6"/><circle cx="26" cy="20" r="3.2" fill="#fff" stroke="#0e2a47" stroke-width="1.6"/><path d="M4 8h9M4 11h6" stroke="#4aa3ff" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  box:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>',
+  route:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 000-6H9a3 3 0 010-6h6.5"/></svg>',
+  check:'<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  xmark:'<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M8 8l8 8M16 8l-8 8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  barcode:'<svg width="22" height="20" viewBox="0 0 24 20" fill="currentColor"><rect x="1" y="2" width="2" height="16"/><rect x="5" y="2" width="1" height="16"/><rect x="8" y="2" width="2" height="16"/><rect x="12" y="2" width="1" height="16"/><rect x="15" y="2" width="3" height="16"/><rect x="20" y="2" width="1" height="16"/><rect x="22" y="2" width="1.5" height="16"/></svg>',
+  search:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  sync:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 11a8 8 0 00-14.3-4.9L4 8M4 13a8 8 0 0014.3 4.9L20 16"/><path d="M4 3v5h5M20 21v-5h-5"/></svg>',
+  user:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>',
+  split:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="4" cy="12" r="2"/><circle cx="20" cy="5" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="20" cy="19" r="2"/><path d="M6 12h4m0 0c3 0 3-7 8-7M10 12h8M10 12c3 0 3 7 8 7"/></svg>',
+  swap:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>',
+  doc:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2h8l5 5v15H6z"/><path d="M14 2v5h5M9 12h7M9 16h7"/></svg>',
+  alert:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="flex:0 0 auto;margin-top:1px"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>',
+  info:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.5"/></svg>',
+  valid:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v18H7z"/><path d="M10 8h4M10 12l1.5 1.5L15 10M10 17h4"/></svg>',
+  chev:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
+  redeliver:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>',
+  bigcheck:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+};
+
+/* ================= MASTER DATA ================= */
+const APP_VERSION = 'v2.0.0';
+const SAP_STATUSES = ['Planning','Check-in','Loading Start','Loading End','Shipment Completion','Shipment Start'];
+const MARKETS = {
+  TH:{name:'Thailand',plant:'TH01',ias:'EZD_TH_WH',device:'CipherLab RS35',user:'daniel.santos',huPre:'PS',obdBase:810234500,
+      routes:{'BM07-BPM07':'Bangkok Metro 07','BKK-N01':'Bangkok North 01','BKK-E02':'Bangkok East 02','CNX-01':'Chiang Mai 01'},
+      tppt:['TH01 – Bangkok DC','TH02 – Chonburi DC','TH03 – Lamphun Hub'],
+      shipTypes:['Z001 – Domestic Road','Z002 – Domestic Air','Z003 – Export Sea'],
+      agents:['Kerry Express TH','DHL Supply Chain TH','SCG JWD Logistics'],
+      status:'Shipment Completion', statusNote:'TH default', output:'SAP'},
+  PH:{name:'Philippines',plant:'PH01',ias:'EZD_PH_WH',device:'Device TBC',user:'maria.reyes',huPre:'PH',obdBase:910557200,
+      routes:{'MNL-N01':'Metro Manila North','MNL-S02':'Metro Manila South','CEB-01':'Cebu 01','DVO-01':'Davao 01'},
+      tppt:['PH01 – Taguig DC','PH02 – Cebu DC'],
+      shipTypes:['Z001 – Domestic Road','Z002 – Domestic Air','Z004 – Inter-island Sea'],
+      agents:['LBC Express','2GO Logistics','Air21'],
+      status:'Shipment Completion', statusNote:'PH default – TBC', output:'SAP'},
+  HK:{name:'Hong Kong',plant:'HK01',ias:'EZD_HK_WH',device:'Zebra TC26',user:'wing.chan',huPre:'HK',obdBase:710998800,
+      routes:{'HK-KLN1':'Kowloon 1','HK-NT2':'New Territories 2','HK-ISL1':'HK Island 1','HK-LTU':'Lantau'},
+      tppt:['HK01 – Tsing Yi DC'],
+      shipTypes:['Z001 – Domestic Road'],
+      agents:['Kerry Logistics HK','SF Express HK'],
+      status:'Shipment Start', statusNote:'HK default – TBC', output:'PlanetPress'}
+};
+const LANES = ['L01-R05','L02-R03','L03-R01','L04-R02','L05-R04'];
+const today = new Date();
+const fmtD = d => d.toISOString().slice(0,10);
+const TODAY = fmtD(today), TOMORROW = fmtD(new Date(today.getTime()+86400000));
+
+const YESTERDAY = fmtD(new Date(today.getTime()-86400000));
+const SEED_SHIP = '0079500123';
+const FAIL_REASONS = ['Customer not available','Customer refused delivery','Wrong / incomplete address','Damaged in transit','Other'];
+let DB, S;
+
+function seed(){
+  DB = {obds:[],hus:[]};
+  const plan = [
+    {lane:'L01-R05', ri:0, rec:false, obds:[{n:3},{n:2,pri:'Urgent'},{n:4,inv:false},{n:3}]},
+    {lane:'L02-R03', ri:1, rec:true,  obds:[{n:2,inv:false},{n:3,missing:1,date:TOMORROW}]},
+    {lane:'L03-R01', ri:2, rec:true,  obds:[{n:2},{n:1}]},
+    // RE-DELIVERY (new): OBDs already dispatched yesterday on shipment SEED_SHIP — candidates for a failed delivery
+    {lane:'L04-R02', ri:3, rec:true, ship:true, obds:[{n:3,date:YESTERDAY},{n:2,date:YESTERDAY}]}
+  ];
+  for (const mk of Object.keys(MARKETS)){
+    const m = MARKETS[mk], routes = Object.keys(m.routes);
+    let hu=1, ob=0;
+    for (const g of plan){
+      for (const o of g.obds){
+        const id = '0'+(m.obdBase + (ob++)*37);
+        DB.obds.push({id, mk, route:routes[g.ri], date:o.date||TODAY, priority:o.pri||'Normal', invoiced:o.inv!==false});
+        for (let i=0;i<o.n;i++){
+          const received = g.rec && !(o.missing && i >= o.n - o.missing);
+          DB.hus.push({id:m.huPre+String(hu++).padStart(5,'0'), mk, obd:id, lane:g.lane, received, techId:null, dispatched:!!g.ship, shipment:g.ship?SEED_SHIP:null, shipDate:g.ship?YESTERDAY:null, redel:null});
+        }
+      }
+    }
+  }
+}
+
+function freshSession(mk){
+  return {receive:{lane:null,last:null,lastHu:null,count:0,msg:null},
+          split:{lane:null,sel:[],search:'',open:[],msg:null},
+          change:{lanes:[],excl:[],newLane:'',search:'',open:[],msg:null},
+          validation:{tab:'hu',hu:null,obd:null,msg:null},
+          redel:{obd:null,sel:[],reason:'',msg:null},
+          dispatch:{batches:[],excl:[],tab:'pk',search:'',open:[],msg:null,showErr:false,
+                    form:{type:'',route:'',tppt:'',agent:'',mode:'Land / Truck',status:MARKETS[mk].status}}};
+}
+
+function init(keepLog){
+  seed();
+  const log = keepLog && S ? S.log : [];
+  S = {mk:'TH', env:'PROD', screen:'login', modal:null, loading:null, lastSync:new Date(), syncing:false,
+       log, settings:{tidOnExclude:'retain'}, tidSeq:{TH:0,PH:0,HK:0}, last:null, ...freshSession('TH')};
+  addLog('IAS', `User ${MARKETS.TH.user} authenticated · IAS group ${MARKETS.TH.ias} → plant ${MARKETS.TH.plant}`);
+  addLog('HANA', `Offline DB synced to device: ${countMk('hus')} HUs / ${countMk('obds')} OBDs for plant ${MARKETS.TH.plant} only`);
+  render();
+}
+
+/* ================= HELPERS ================= */
+const M = () => MARKETS[S.mk];
+const mkHus = () => DB.hus.filter(h=>h.mk===S.mk);
+const countMk = t => DB[t].filter(x=>x.mk===S.mk).length;
+const obd = id => DB.obds.find(o=>o.id===id);
+const husOfObd = id => DB.hus.filter(h=>h.obd===id && !h.dispatched);
+const findHu = code => DB.hus.find(h=>h.id===code);
+const nowT = () => new Date().toTimeString().slice(0,5);
+const nowTs = () => new Date().toTimeString().slice(0,8);
+const uniq = a => [...new Set(a)];
+const toggle = (arr,v) => arr.includes(v) ? arr.filter(x=>x!==v) : [...arr,v];
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function obdLane(id){ const h = husOfObd(id)[0]; return h ? h.lane : '—'; }
+function obdTid(id){ const t = uniq(husOfObd(id).map(h=>h.techId).filter(Boolean)); return t[0]||null; }
+function obdRecv(id){ const hs=husOfObd(id); return {r:hs.filter(h=>h.received).length, n:hs.length}; }
+
+function addLog(sys,msg){ S.log.unshift({t:nowTs(),sys,msg}); }
+let toastTimer;
+function toast(msg){ const t=document.getElementById('toast'); t.innerHTML=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600); }
+function go(screen){ S.screen=screen; S.modal=null; render(); document.querySelector('.content')?.scrollTo(0,0); }
+function banner(m){ if(!m) return ''; const ic = m.type==='error'||m.type==='warn'?I.alert:I.info; return `<div class="banner ${m.type}">${ic}<div>${m.text}</div></div>`; }
+function scanField(id,ph,target,extra=''){
+  return `<div class="scanbox">${I.barcode}<input id="${id}" data-scan="${target}" placeholder="${ph}" autocomplete="off" onkeydown="if(event.key==='Enter'){scan(this.value,'${target}');}" ${extra}>${I.barcode}</div>`;
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const ae = document.activeElement; const keep = ae && ae.id && ae.closest && ae.closest('#screen') ? {id:ae.id, s:ae.selectionStart} : null;
+  const sc = SCREENS[S.screen]();
+  const m = M();
+  document.getElementById('devlabel').textContent = `${m.device} · ${m.name}`;
+  if (sc.fullscreen){
+    document.getElementById('screen').innerHTML = `
+      <div class="statusbar"><span>${nowT()}</span><span>▲ ● ▮ 92%</span></div>
+      <main class="content login-content">${sc.body}</main>
+      ${S.modal ? `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet">${S.modal.html}</div></div>` : ''}
+      ${S.loading ? `<div class="loading"><div class="ring"></div><div>${S.loading}</div></div>` : ''}`;
+    renderSide();
+    if (keep && document.getElementById(keep.id)){ const el=document.getElementById(keep.id); el.focus(); try{ if(keep.s!=null) el.setSelectionRange(keep.s,keep.s);}catch(e){} }
+    return;
+  }
+  document.getElementById('screen').innerHTML = `
+    <div class="statusbar"><span>${nowT()}</span><span>▲ ● ▮ 92%</span></div>
+    <header class="appbar">
+      ${sc.back ? `<button class="icon-btn" title="Back" onclick="go('${sc.back}')">${I.back}</button>` : `<button class="icon-btn" title="Menu" onclick="toast('Menu – not in scope')">${I.menu}</button>`}
+      <div class="brand">${I.truck}<div><div class="logo"><span>eZ</span>Dispatch</div><div class="sub">${sc.sub}</div></div></div>
+      <span class="env ${S.env}" title="Environment indicator">${S.env}</span>
+    </header>
+    <div class="utilbar">
+      <span>${APP_VERSION}</span>
+      <span class="grow"></span>
+      <button onclick="doSync()" title="Synchronise offline database">${S.syncing?`<span class="spin">${I.sync}</span> Syncing…`:`${I.sync} Sync · ${S.lastSync.toTimeString().slice(0,5)}`}</button>
+      <button onclick="openSwitch()" title="Switch user">${I.user} ${m.user} · ${m.plant}</button>
+    </div>
+    <main class="content">${sc.body}</main>
+    ${sc.footer ? `<div class="footer">${sc.footer}</div>` : ''}
+    ${sc.nav ? sc.nav : ''}
+    ${S.modal ? `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet">${S.modal.html}</div></div>` : ''}
+    ${S.loading ? `<div class="loading"><div class="ring"></div><div>${S.loading}</div></div>` : ''}`;
+  renderSide();
+  if (keep && document.getElementById(keep.id)){ const el=document.getElementById(keep.id); el.focus(); try{ if(keep.s!=null) el.setSelectionRange(keep.s,keep.s);}catch(e){} }
+  else if (!S.modal && !S.loading){ const a=document.querySelector('#screen [data-autofocus]'); if(a && window.innerWidth>700) a.focus({preventScroll:true}); }
+}
+function closeModal(){ S.modal=null; render(); }
+
+/* ================= SCREENS ================= */
+const SCREENS = {};
+
+SCREENS.login = () => {
+  const m=M();
+  return {fullscreen:true, body:`
+    <div class="loginscreen">
+      <div class="login-brand">
+        ${I.truck}
+        <div class="logo" style="font-size:30px;margin-top:4px"><span>eZ</span>Dispatch</div>
+        <div class="login-tag">Smarter Dispatch. Smoother Operations.</div>
+      </div>
+      <div class="login-card">
+        <div class="field"><label>Username</label><input id="loginUser" value="${m.user}" autocomplete="username" onkeydown="if(event.key==='Enter')signIn()"></div>
+        <div class="field"><label>Password</label><input id="loginPass" type="password" value="demopass" onkeydown="if(event.key==='Enter')signIn()"></div>
+        <div class="field" style="margin-bottom:8px"><label>Environment</label>
+          <div class="seg" style="width:100%">
+            <button class="${S.env==='PROD'?'on':''}" style="flex:1" onclick="S.env='PROD';render()">PROD</button>
+            <button class="${S.env==='QAS'?'on':''}" style="flex:1" onclick="S.env='QAS';render()">QAS</button>
+          </div>
+        </div>
+        <button class="btn primary block" onclick="signIn()">Sign In</button>
+        <div class="login-foot">${m.device} · ${m.name} (${m.plant})&nbsp; · &nbsp;${APP_VERSION}</div>
+      </div>
+      <div class="login-hint">Demo sign-in — any credentials work. Switch market/plant after login via <b>Switch user</b>.</div>
+    </div>`};
+};
+function signIn(){
+  S.screen='home';
+  addLog('IAS', `User ${M().user} signed in to ${S.env} · IAS group ${M().ias} → plant ${M().plant}`);
+  render();
+}
+
+SCREENS.home = () => {
+  const m=M();
+  const tile=(scr,color,icon,title,desc,extra='')=>`<button class="tile" style="border-bottom-color:${color}" onclick="go('${scr}')"><span class="chev">${I.chev}</span><div class="ic" style="background:${color}">${icon}</div><h3>${title}</h3><p>${desc}</p>${extra}</button>`;
+  return {sub:'Smarter Dispatch. Smoother Operations.', body:`
+    <div class="card usercard">
+      <div class="avatar">${m.user[0].toUpperCase()}</div>
+      <div style="flex:1"><div class="lbl" style="margin:0">LOGGED IN AS</div><b>${m.user}</b><div class="small muted">Warehouse Operations · ${m.name} (${m.plant})</div></div>
+      <button class="btn ghost sm" onclick="openSwitch()">Switch user</button>
+    </div>
+    ${S.mk==='HK' ? banner({type:'warn',text:'Hong Kong stays on the current app for now. HK is shown here only to demo the future regional version: the shipment output goes to PlanetPress as XML.'}) : ''}
+    <div class="tiles">
+      ${tile('receive','#1a6ae0',I.box.replace('currentColor','#fff'),'Receive','Scan lane + route, then scan cartons to receive and stage them in one step.')}
+      ${tile('route','#16a085',I.route,'Change Route','Split a route into mini-batches or move OBDs to another lane + route.')}
+      ${tile('validation','#6a4fd8',I.valid,'Validation','Scan an HU to check HU, OBD and route-level status; drill into OBD details.','<span class="pill amber tbc">TBC</span>')}
+      ${tile('dispatch','#f07c1b',I.truck.replace(/#0e2a47/g,'#f07c1b'),'Dispatch','Scan one HU per batch, check it, and create the SAP shipment.')}
+      <button class="tile delta-tile" style="border-bottom-color:#e6a700" onclick="go('redelivery')"><span class="chev">${I.chev}</span><span class="pill delta newtag">NEW</span><div class="ic" style="background:#d99a00">${I.redeliver.replace('currentColor','#fff')}</div><div><h3>Re-Delivery</h3><p>Failed delivery? Reset its HUs to Received so they can be dispatched again on a new shipment.</p></div></button>
+    </div>
+    <p class="small muted" style="margin-top:12px;text-align:center">Staging is merged into Receive · Merging has been removed</p>`,
+    nav:`<div class="navbar"><div>Device<b>${m.device}</b></div><div>Environment<b>${S.env}</b></div><div>Version<b>${APP_VERSION}</b></div></div>`};
+};
+
+/* ---------- RECEIVE ---------- */
+SCREENS.receive = () => {
+  const R=S.receive;
+  let body='';
+  if (!R.lane){
+    body += `<div class="card"><div class="lbl">Lane + Route</div>${scanField('scanLane','Scan lane + route barcode','rlane','data-autofocus')}
+      <div class="hint">${I.info}<span>Scan the lane + route first. It is used to check every package you scan after it.</span></div></div>`;
+  } else {
+    body += `<div class="card ok"><div class="between"><div class="row">${I.route}<div><div class="lbl" style="margin:0">Lane + Route</div><div class="big">${R.lane}</div></div></div>
+      <div style="text-align:right"><span class="pill green">${I.check} Scanned</span><br><button class="btn ghost sm" style="margin-top:6px" onclick="S.receive={lane:null,last:null,lastHu:null,count:0,msg:null};render()">Change</button></div></div></div>
+      <div class="card"><div class="lbl">Handling Unit</div>${scanField('scanHu','Scan handling unit (continuous)','rhu','data-autofocus')}</div>`;
+    body += banner(R.msg);
+    if (R.last){
+      const o=obd(R.last), hs=husOfObd(o.id), rc=hs.filter(h=>h.received).length;
+      body += `<div class="card">
+        <div class="between"><div class="row">${I.doc}<div><div class="lbl" style="margin:0">Delivery Document (OBD)</div><div class="big">${o.id}</div></div></div>
+          <div style="text-align:right"><div class="lbl" style="margin:0">Count</div><div class="big" style="color:${rc===hs.length?'var(--green)':'var(--red)'}">${rc} / ${hs.length}</div><div class="small muted">received</div></div></div>
+        <div class="kv" style="margin-top:10px"><div class="k">Lane + Route</div><div class="v">${R.lane}</div></div>
+        <div class="hulist">${hs.map((h,i)=>`<div class="hurow ${h.id===R.lastHu?'hl':''}"><span class="n">${i+1}</span><span class="code">${I.barcode} ${h.id}</span>${h.received?`<span class="st-ok">${I.check}</span>`:`<span class="st-no">${I.xmark}</span>`}</div>`).join('')}</div>
+      </div>`;
+    }
+    const laneH = mkHus().filter(h=>h.lane===R.lane && !h.dispatched);
+    const obds = uniq(laneH.map(h=>h.obd));
+    const outstanding = obds.filter(id=>obdRecv(id).r<obdRecv(id).n).length;
+    body += `<div class="summary"><div><b>${R.count}</b><span>Scanned this session</span></div><div><b>${laneH.filter(h=>h.received).length}/${laneH.length}</b><span>HUs received in lane</span></div><div><b style="color:${outstanding?'var(--red)':'var(--green)'}">${outstanding}</b><span>OBDs outstanding</span></div></div>`;
+  }
+  return {sub:'Receive Package', back:'home', body,
+    footer:`<div class="between small"><span class="row">${I.box} ${R.lane?'Ready to receive next package…':'Waiting for lane + route…'}</span><span class="pill green">● Online</span></div>`};
+};
+
+/* ---------- ROUTE MENU ---------- */
+SCREENS.route = () => ({sub:'Route Management', back:'home', body:`
+  <button class="menu-item" onclick="go('split')"><div class="ic">${I.split}</div><div style="flex:1"><h3>Split Route</h3><p>Split part of a lane + route into a mini-batch with its own technical ID, to dispatch later.</p></div>${I.chev}</button>
+  <button class="menu-item" onclick="go('change')"><div class="ic">${I.swap}</div><div style="flex:1"><h3>Change Lane + Route</h3><p>Move selected OBDs from one or more lanes + routes to a new lane + route.</p></div>${I.chev}</button>`});
+
+/* ---------- SPLIT ---------- */
+SCREENS.split = () => {
+  const P=S.split; let body='';
+  body += `<div class="card"><div class="lbl">Lane + Route</div>${P.lane
+    ? `<div class="between"><div class="row">${I.route}<b class="big">${P.lane}</b></div><button class="btn ghost sm" onclick="S.split={lane:null,sel:[],search:'',open:[],msg:null};render()">Clear</button></div>`
+    : scanField('scanSplitLane','Scan lane + route','slane','data-autofocus')}</div>`;
+  body += banner(P.msg);
+  if (P.lane){
+    const parent = mkHus().filter(h=>h.lane===P.lane && !h.techId && !h.dispatched);
+    let obds = uniq(parent.map(h=>h.obd));
+    const q=P.search.trim().toUpperCase();
+    if (q) obds = obds.filter(id=>id.includes(q) || husOfObd(id).some(h=>h.id.includes(q)));
+    const tids = uniq(mkHus().filter(h=>h.lane===P.lane && h.techId && !h.dispatched).map(h=>h.techId));
+    body += `<div class="card"><div class="between"><b>Outbound Deliveries (OBD)</b><span class="small muted">Parent group: ${uniq(parent.map(h=>h.obd)).length} OBDs</span></div>
+      <div class="scanbox" style="margin-top:8px">${I.search}<input id="splitSearch" placeholder="Search OBD or scan HU" value="${esc(P.search)}" oninput="S.split.search=this.value;render()"></div>
+      <table class="t" style="margin-top:6px"><tr><th></th><th>OBD number</th><th>Pkgs</th><th>Split?</th></tr>
+      ${obds.map(id=>{const hs=husOfObd(id).filter(h=>!h.techId), op=P.open.includes(id)||!!q, sel=P.sel.includes(id), rr=hs.filter(h=>h.received).length;
+        return `<tr class="${sel?'sel':''}"><td><button class="caret" onclick="S.split.open=toggle(S.split.open,'${id}');render()">${op?'▼':'▶'}</button></td>
+          <td><b>${id}</b>${rr<hs.length?' <span class="pill red">'+rr+'/'+hs.length+'</span>':''}</td><td>${hs.length}</td>
+          <td><input type="checkbox" ${sel?'checked':''} onchange="S.split.sel=toggle(S.split.sel,'${id}');render()"></td></tr>
+          ${op?hs.map(h=>`<tr class="sub"><td></td><td colspan="3">• ${h.id} ${h.received?'<span class="pill green">Received</span>':'<span class="pill red">Not received</span>'}</td></tr>`).join(''):''}`;}).join('') || `<tr><td colspan="4" class="muted small">No OBDs in the parent group.</td></tr>`}
+      </table></div>`;
+    if (tids.length) body += `<div class="card"><b>Existing mini-batches in ${P.lane}</b><div class="chips">${tids.map(t=>`<span class="chip tid">${t} · ${uniq(mkHus().filter(h=>h.techId===t&&!h.dispatched).map(h=>h.obd)).length} OBD</span>`).join('')}</div></div>`;
+  }
+  const n = P.sel.length, hn = P.sel.reduce((a,id)=>a+husOfObd(id).filter(h=>!h.techId).length,0);
+  return {sub:'Split Route', back:'route', body,
+    footer: P.lane ? `<button class="btn primary block" ${n?'':'disabled'} onclick="confirmSplit()">${I.split} Split ${n?`${n} OBD · ${hn} HU`:''}</button>` : null};
+};
+
+/* ---------- CHANGE LANE + ROUTE ---------- */
+SCREENS.change = () => {
+  const C=S.change; let body='';
+  body += `<div class="card"><div class="lbl">Lane + Route</div>${scanField('scanChgLane','Scan lane + route','clane','data-autofocus')}
+    <div class="hint">${I.info}<span>You can scan several lanes + routes. The field clears after each scan.</span></div>
+    ${C.lanes.length?`<div class="chips">${C.lanes.map(l=>`<span class="chip">${l}<button onclick="S.change.lanes=S.change.lanes.filter(x=>x!=='${l}');render()">×</button></span>`).join('')}</div>`:''}</div>`;
+  body += banner(C.msg);
+  if (C.lanes.length){
+    let obds = uniq(mkHus().filter(h=>C.lanes.includes(h.lane)&&!h.dispatched).map(h=>h.obd));
+    const q=C.search.trim().toUpperCase();
+    if (q) obds = obds.filter(id=>id.includes(q) || husOfObd(id).some(h=>h.id.includes(q)));
+    body += `<div class="card"><div class="lbl">Search Handling Unit or Delivery Document</div>
+      <div class="scanbox">${I.search}<input id="chgSearch" placeholder="Scan HU number or type OBD" value="${esc(C.search)}" oninput="S.change.search=this.value;render()"></div></div>
+      <div class="card"><div class="between"><b>Outbound Deliveries (OBD)</b><span class="small muted">Total OBDs: ${obds.length}</span></div>
+      <table class="t" style="margin-top:6px"><tr><th></th><th>OBD</th><th>Current lane + route</th><th>Exclude?</th></tr>
+      ${obds.map(id=>{const ex=C.excl.includes(id), op=C.open.includes(id)||!!q, rc=obdRecv(id), tid=obdTid(id);
+        return `<tr class="${ex?'excl':''}"><td><button class="caret" onclick="S.change.open=toggle(S.change.open,'${id}');render()">${op?'▼':'▶'}</button></td>
+        <td><b>${id}</b>${rc.r<rc.n?` <span class="pill red">${rc.r}/${rc.n}</span>`:''}${tid?`<br><span class="pill purple">${tid}</span>`:''}</td><td>${obdLane(id)}</td>
+        <td><input type="checkbox" ${ex?'checked':''} onchange="S.change.excl=toggle(S.change.excl,'${id}');render()"></td></tr>
+        ${op?husOfObd(id).map(h=>`<tr class="sub"><td></td><td colspan="3">• ${h.id} ${h.received?'<span class="pill green">Received</span>':'<span class="pill red">Not received</span>'}</td></tr>`).join(''):''}`;}).join('')}
+      </table></div>`;
+  }
+  const moving = C.lanes.length ? uniq(mkHus().filter(h=>C.lanes.includes(h.lane)&&!h.dispatched).map(h=>h.obd)).filter(id=>!C.excl.includes(id)).length : 0;
+  return {sub:'Change Lane + Route', back:'route', body,
+    footer:`<div class="lbl"><b>New Lane + Route</b></div><div class="row"><div style="flex:1">${`<div class="scanbox">${I.barcode}<input id="newLane" placeholder="Scan or enter new lane + route" value="${esc(C.newLane)}" oninput="S.change.newLane=this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){scan(this.value,'newlane')}"></div>`}</div>
+      <button class="btn primary" ${moving?'':'disabled'} onclick="confirmChange()">${I.swap} Confirm</button></div>
+      ${C.lanes.length?`<div class="small muted" style="margin-top:6px">${moving} OBD(s) will move · ${C.excl.length} excluded keep their original lane + route</div>`:''}`};
+};
+
+/* ---------- DISPATCH ---------- */
+function dispatchGroups(){
+  const D=S.dispatch; const set=[];
+  for (const b of D.batches){
+    mkHus().filter(h=>!h.dispatched && (b.type==='tid' ? h.techId===b.id : (h.lane===b.id && !h.techId))).forEach(h=>{ if(!set.includes(h)) set.push(h); });
+  }
+  const groups=[]; for (const h of set){ let g=groups.find(x=>x.obd===h.obd); if(!g){g={obd:h.obd,hus:[]};groups.push(g);} g.hus.push(h); }
+  return groups;
+}
+function formState(){
+  const f=S.dispatch.form, m=M(); const route=f.route.trim().toUpperCase();
+  const routeOk = !!m.routes[route];
+  const errs={type:!f.type, route:!routeOk, tppt:!f.tppt};
+  return {errs, routeOk, route, any:Object.values(errs).some(Boolean)};
+}
+SCREENS.dispatch = () => {
+  const D=S.dispatch, m=M(); let body='';
+  const groups=dispatchGroups();
+  const incl = groups.filter(g=>!D.excl.includes(g.obd));
+  const huIn = incl.reduce((a,g)=>a+g.hus.filter(h=>h.received).length,0);
+  const huTot = incl.reduce((a,g)=>a+g.hus.length,0);
+  const fs=formState();
+  body += `<div class="card ${D.batches.length?'ok':''}"><div class="row">${I.box}<div style="flex:1"><div class="lbl" style="margin:0 0 4px">Handling Unit</div>
+    ${scanField('scanDisp','Scan one HU from each batch','dhu','data-autofocus')}</div></div>
+    ${D.batches.length?`<div class="chips">${D.batches.map(b=>`<span class="chip ${b.type==='tid'?'tid':''}">${b.type==='tid'?'Mini-batch '+b.id:b.id+' (parent)'}<button title="Remove batch" onclick="removeBatch('${b.id}')">×</button></span>`).join('')}</div>`:''}</div>`;
+  body += banner(D.msg);
+  body += `<div class="tabs"><button class="${D.tab==='pk'?'on':''}" onclick="S.dispatch.tab='pk';render()">${I.box} Packages</button>
+    <button class="${D.tab==='sd'?'on':''}" onclick="S.dispatch.tab='sd';render()">${I.doc} Shipment Details ${D.showErr&&fs.any?'<span class="dot">!</span>':''}</button></div>`;
+  if (D.tab==='pk'){
+    if (!groups.length){ body += `<div class="card muted small" style="text-align:center;padding:28px">Scan a handling unit to bring its whole batch here.<br>You can scan HUs from several lanes + routes or mini-batches to combine them into one shipment.</div>`; }
+    else {
+      const flags = incl.filter(g=>{const r=obdRecv(g.obd);return r.r<r.n || !obd(g.obd).invoiced;}).length;
+      body += `<div class="summary"><div><b>${incl.length}</b><span>OBDs in shipment</span></div><div><b>${huIn}/${huTot}</b><span>HUs received</span></div><div><b style="color:${flags?'var(--amber)':'var(--green)'}">${flags}</b><span>OBDs flagged</span></div></div>
+        <div class="scanbox" style="margin-bottom:10px">${I.search}<input id="dispSearch" placeholder="Search OBD or Handling Unit number" value="${esc(D.search)}" oninput="S.dispatch.search=this.value;render()">${D.search?`<button class="caret" onclick="S.dispatch.search='';render()">✕</button>`:''}</div>`;
+      const q=D.search.trim().toUpperCase();
+      const shown = q ? groups.filter(g=>g.obd.includes(q)||g.hus.some(h=>h.id.includes(q))) : groups;
+      body += shown.map(g=>{
+        const o=obd(g.obd), ex=D.excl.includes(g.obd), op=D.open.includes(g.obd)||!!q, r=g.hus.filter(h=>h.received).length, tid=obdTid(g.obd);
+        const all=obdRecv(g.obd);
+        return `<div class="obdcard ${ex?'excl':''}"><div class="obdhead" onclick="S.dispatch.open=toggle(S.dispatch.open,'${g.obd}');render()">
+          ${I.doc}<div style="flex:1;min-width:0"><div class="meta">Outbound Delivery (OBD) · ${g.hus[0].lane}${tid?' · '+tid:''}</div><div class="num">${g.obd} <span class="small muted">${op?'▲':'▼'}</span></div>
+          <div class="row" style="flex-wrap:wrap;gap:4px;margin-top:3px"><span class="pill ${r===g.hus.length?'green':'red'}">${r}/${g.hus.length} HU</span>
+            ${all.r<all.n?'<span class="pill amber">⚠ Incomplete</span>':''}${!o.invoiced?'<span class="pill red">Not invoiced</span>':''}${o.priority==='Urgent'?'<span class="pill red">Urgent</span>':''}${g.hus.some(h=>h.redel)?`<span class="pill delta">↺ Re-delivery · prev. ${g.hus.find(h=>h.redel).redel.prev}</span>`:''}</div></div>
+          <label class="exclbox" onclick="event.stopPropagation()"><input type="checkbox" ${ex?'checked':''} onchange="S.dispatch.excl=toggle(S.dispatch.excl,'${g.obd}');render()">Exclude from shipment creation</label></div>
+          ${op?`<div class="obdbody">${g.hus.map(h=>`<div class="hurow ${q&&h.id.includes(q)?'hl':''}"><span class="code">${I.barcode} ${h.id}</span>${h.received?`<span class="pill green">${I.check} Received</span>`:`<span class="pill red">${I.xmark} Not received</span>`}</div>`).join('')}</div>`:''}</div>`;}).join('');
+    }
+  } else {
+    const f=D.form, e=D.showErr?fs.errs:{};
+    const opts=(arr,v,ph)=>`<option value="">${ph}</option>`+arr.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('');
+    const obdRoutes = uniq(incl.map(g=>obd(g.obd).route));
+    let rmsg='<div class="msg info">Enter manually · checked right away against BTP HANA</div>';
+    if (f.route.trim()) rmsg = fs.routeOk ? `<div class="msg ok">${I.check} Valid route: ${m.routes[fs.route]}</div>` : `<div class="msg bad">${I.xmark} Route not found in BTP HANA for ${m.plant}</div>`;
+    body += `<div class="card"><div class="row" style="margin-bottom:12px">${I.doc}<b>Shipment Information</b></div>
+      <div class="field ${e.type?'err':''}"><label>Shipment Type <span class="req">*</span></label><select id="fType" onchange="S.dispatch.form.type=this.value;render()">${opts(m.shipTypes,f.type,'Select shipment type')}</select></div>
+      <div class="field ${e.route?'err':''}"><label>Shipment Route <span class="req">*</span></label><input id="fRoute" placeholder="Enter shipment route" value="${esc(f.route)}" oninput="S.dispatch.form.route=this.value.toUpperCase();render()">${rmsg}
+        ${obdRoutes.length?`<div class="msg info">OBD routes in this shipment: ${obdRoutes.join(', ')}</div>`:''}</div>
+      <div class="field ${e.tppt?'err':''}"><label>TPPT <span class="req">*</span></label><select id="fTppt" onchange="S.dispatch.form.tppt=this.value;render()">${opts(m.tppt,f.tppt,'Select TPPT')}</select><div class="msg info">Values for ${m.name}, synced from SAP</div></div>
+      <div class="field"><label>Forwarding Agent</label><input id="fAgent" list="agents" placeholder="Enter forwarding agent" value="${esc(f.agent)}" oninput="S.dispatch.form.agent=this.value"><datalist id="agents">${m.agents.map(a=>`<option value="${a}">`).join('')}</datalist></div>
+      <div class="field"><label>Shipping Type</label><select id="fMode" onchange="S.dispatch.form.mode=this.value">${opts(['Land / Truck','Air','Sea'],f.mode,'Select shipping type')}</select></div>
+      <div class="field"><label>Shipment Status ${f.status===m.status?`<span class="defaultnote">${m.statusNote}</span>`:''}</label><select id="fStatus" onchange="S.dispatch.form.status=this.value;render()">${opts(SAP_STATUSES,f.status,'Select shipment status')}</select><div class="msg info">The status also decides what flows to the 3PL / 4i app</div></div>
+    </div>`;
+  }
+  return {sub:'Dispatch Shipment', back:'home', body,
+    footer:`<button class="btn primary block" ${incl.length?'':'disabled'} onclick="tryDispatch()">${I.truck.replace(/#0e2a47/g,'#1a6ae0').replace('width="34" height="26"','width="28" height="22"')} Dispatch${incl.length?` · ${incl.length} OBD / ${huIn} HU`:''}</button>`};
+};
+
+/* ---------- RE-DELIVERY (NEW · delta) ---------- */
+function allHusOfObd(id){ return DB.hus.filter(h=>h.obd===id); }
+SCREENS.redelivery = () => {
+  const R=S.redel; let body='';
+  body += `<div class="banner warn delta-box">${I.info}<div><b>New module – Re-Delivery.</b> For OBDs that failed to be delivered to the customer: reset their HUs to <b>Received</b>, then re-scan them in <b>Dispatch</b> to create a new shipment document.</div></div>`;
+  body += `<div class="card delta-box"><div class="lbl">Failed delivery – scan HU or enter OBD number</div>${scanField('scanRedel','Scan HU or enter OBD of the failed delivery','rdhu','data-autofocus')}
+    <div class="hint">${I.info}<span>Only OBDs that have already been dispatched can be reset.</span></div></div>`;
+  body += banner(R.msg);
+  if (R.obd){
+    const o=obd(R.obd), hs=allHusOfObd(R.obd), disp=hs.filter(h=>h.dispatched);
+    const ships=uniq(disp.map(h=>h.shipment));
+    body += `<div class="card delta-box">
+      <div class="between"><div class="row">${I.doc}<div><div class="lbl" style="margin:0">Delivery Document (OBD)</div><div class="big">${R.obd}</div></div></div>
+        <span class="pill delta">Failed delivery</span></div>
+      <div class="grid2 kv" style="margin-top:10px">
+        <div><div class="k">Previous shipment</div><div class="v">${ships.join(', ')||'—'}</div></div>
+        <div><div class="k">Dispatched on</div><div class="v">${disp[0]?.shipDate||TODAY}</div></div>
+        <div><div class="k">Lane + Route</div><div class="v">${hs[0].lane}</div></div>
+        <div><div class="k">Route</div><div class="v">${o.route}</div></div>
+      </div>
+      <div class="between" style="margin-top:10px"><b class="small">Handling units to reset (${R.sel.length}/${disp.length})</b>
+        <button class="btn ghost sm" onclick="S.redel.sel=${R.sel.length===disp.length?'[]':'allHusOfObd(S.redel.obd).filter(h=>h.dispatched).map(h=>h.id)'};render()">${R.sel.length===disp.length?'Clear all':'Select all'}</button></div>
+      <div class="hulist">${hs.map((h,i)=>`<label class="hurow" style="cursor:${h.dispatched?'pointer':'default'}">
+          ${h.dispatched?`<input type="checkbox" ${R.sel.includes(h.id)?'checked':''} onchange="S.redel.sel=toggle(S.redel.sel,'${h.id}');render()">`:'<span class="n">–</span>'}
+          <span class="code">${I.barcode} ${h.id}</span>
+          ${h.dispatched?`<span class="pill blue">Dispatched · ${h.shipment}</span>`:(h.redel?'<span class="pill delta">Reset → Received</span>':'<span class="pill grey">Not dispatched</span>')}</label>`).join('')}</div>
+      <div class="field" style="margin:12px 0 0"><label>Failure reason <span class="req">*</span> <span class="defaultnote" style="background:#fff176;color:#5a4a00">proposed – confirm at design</span></label>
+        <select id="rdReason" onchange="S.redel.reason=this.value;render()"><option value="">Select reason</option>${FAIL_REASONS.map(x=>`<option ${x===R.reason?'selected':''}>${x}</option>`).join('')}</select></div>
+    </div>`;
+  }
+  const ok = R.obd && R.sel.length && R.reason;
+  return {sub:'Re-Delivery', back:'home', body,
+    footer: R.obd ? `<button class="btn primary block" ${ok?'':'disabled'} onclick="confirmRedel()">${I.redeliver.replace('currentColor','#fff')} Reset to Received${R.sel.length?` · ${R.sel.length} HU`:''}</button>` : null};
+};
+function scanRedel(c){
+  const R=S.redel; let id=null;
+  const o=DB.obds.find(x=>x.id===c||x.id==='0'+c);
+  if (o){ if(o.mk!==S.mk){ R.msg={type:'error',text:`OBD <b>${c}</b> belongs to plant ${MARKETS[o.mk].plant}. Your IAS group ${M().ias} can't process it.`}; render(); return; } id=o.id; }
+  else { const h=huGuard(c,m=>{R.msg=m;}); if(!h){ render(); return; } id=h.obd; }
+  const disp=allHusOfObd(id).filter(h=>h.dispatched);
+  if (!disp.length){ R.obd=null; R.sel=[]; R.msg={type:'error',text:`OBD <b>${id}</b> has not been dispatched, so there is no failed delivery to reset.${allHusOfObd(id).some(h=>h.redel)?' Its HUs were already reset to Received – go to <b>Dispatch</b> to re-dispatch them.':''}`}; render(); return; }
+  R.obd=id; R.sel=disp.map(h=>h.id); R.reason=''; R.msg={type:'info',text:`OBD <b>${id}</b> found on shipment ${uniq(disp.map(h=>h.shipment)).join(', ')}. Choose the HUs and a failure reason, then reset.`};
+  render();
+}
+function confirmRedel(){
+  const R=S.redel, lane=allHusOfObd(R.obd)[0].lane, prev=uniq(allHusOfObd(R.obd).filter(h=>R.sel.includes(h.id)).map(h=>h.shipment)).join(', ');
+  S.modal={html:`<h3>Reset ${R.sel.length} HU to Received?</h3>
+    <div class="card delta-box" style="margin:0 0 8px"><div class="grid2 kv"><div><div class="k">OBD</div><div class="v">${R.obd}</div></div><div><div class="k">Previous shipment</div><div class="v">${prev}</div></div>
+      <div><div class="k">Back on lane + route</div><div class="v">${lane}</div></div><div><div class="k">Reason</div><div class="v">${R.reason}</div></div></div></div>
+    <p class="small muted">The HUs become available in <b>Dispatch</b> again. Scan any of them there to create a new shipment document. The previous shipment number is kept for reference.</p>
+    ${banner({type:'warn',text:'<b>Open item:</b> what happens to the original shipment in SAP (e.g. cancellation or status update) is confirmed at design.'})}
+    <div class="acts"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="doRedel()">Reset to Received</button></div>`};
+  render();
+}
+function doRedel(){
+  const R=S.redel, hs=allHusOfObd(R.obd).filter(h=>R.sel.includes(h.id)), prev=uniq(hs.map(h=>h.shipment)).join(', ');
+  hs.forEach(h=>{ h.redel={prev:h.shipment, reason:R.reason, at:new Date()}; h.dispatched=false; h.received=true; h.shipment=null; h.shipDate=null; h.techId=null; });
+  addLog('HANA',`<span class="hl">Re-delivery: ${hs.length} HU of OBD ${R.obd} reset Dispatched → Received (reason: ${R.reason}; prev. shipment ${prev})</span>`);
+  addLog('APP',`<span class="hl">Audit: ${M().user} reset ${hs.map(h=>h.id).join(', ')} for re-delivery</span>`);
+  const id=R.obd, n=hs.length, lane=hs[0].lane;
+  S.redel={obd:null,sel:[],reason:'',msg:{type:'success',text:`<b>${n} HU</b> of OBD ${id} reset to <b>Received</b> on ${lane}. Go to <b>Dispatch</b> and scan <b>${hs[0].id}</b> to create the new shipment. <br><button class="btn primary sm" style="margin-top:8px" onclick="S.dispatch=freshSession(S.mk).dispatch;go('dispatch')">Go to Dispatch</button>`}};
+  S.modal=null; render();
+}
+
+SCREENS.done = () => {
+  const L=S.last, m=M();
+  return {sub:'Shipment Created', back:'home', body:`
+    <div class="done-hero"><div class="ok">${I.bigcheck}</div><div class="muted small">SAP Shipment created</div><div class="big" style="font-size:26px">${L.no}</div></div>
+    <div class="card grid2 kv">
+      <div><div class="k">Shipment type</div><div class="v">${L.form.type}</div></div>
+      <div><div class="k">Shipment route</div><div class="v">${L.form.route}</div></div>
+      <div><div class="k">TPPT</div><div class="v">${L.form.tppt}</div></div>
+      <div><div class="k">Forwarding agent</div><div class="v">${L.form.agent||'—'}</div></div>
+      <div><div class="k">Shipping type</div><div class="v">${L.form.mode||'—'}</div></div>
+      <div><div class="k">Status</div><div class="v">${L.form.status||'—'}</div></div>
+      <div><div class="k">OBDs / HUs</div><div class="v">${L.obds.length} / ${L.hus}</div></div>
+      <div><div class="k">Lanes + routes</div><div class="v">${L.lanes.join(', ')}</div></div>
+    </div>
+    <div class="sectitle">What happened</div>
+    <div class="card"><div class="timeline">${L.events.map(e=>`<div>${e}</div>`).join('')}</div></div>
+    ${L.left.length?banner({type:'warn',text:L.left.join('<br>')}):''}
+    ${L.redel&&L.redel.length?`<div class="banner warn delta-box">${I.redeliver}<div><b>Re-delivery shipment.</b> ${L.redel.map(r=>`OBD ${r.obd} re-dispatched (previous shipment ${r.prev})`).join('<br>')}</div></div>`:''}`,
+    footer:`<div class="row"><button class="btn ghost" style="flex:1" onclick="go('home')">Home</button><button class="btn primary" style="flex:1" onclick="S.dispatch=freshSession(S.mk).dispatch;go('dispatch')">New dispatch</button></div>`};
+};
+
+/* ---------- VALIDATION REPORT (HU / OBD / Route + OBD Details drill-down) ---------- */
+const VUSERS=['JUAN.DELA_CRUZ','MARIA.SANTOS','PEDRO.REYES','DANIEL.SANTOS'];
+function hhash(s){let h=0;for(let i=0;i<String(s).length;i++){h=(h*31+String(s).charCodeAt(i))>>>0;}return h;}
+function fmtNice(d){return d.toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});}
+function huRecvInfo(h){const b=hhash(h.id);const d=new Date(today.getTime()-(((b%4)+1)*86400000)+((b%9)*3600000)+((b%47)*60000));return {date:fmtNice(d),time:d.toTimeString().slice(0,8),user:VUSERS[b%VUSERS.length]};}
+function huEvents(h){
+  const b=hhash(h.id); const ev=[]; const ri=huRecvInfo(h);
+  if(h.received) ev.push({act:'Received · tagged to '+h.lane,date:ri.date,time:ri.time,user:ri.user});
+  if(h.techId){const d=new Date(today.getTime()-(((b%3))*86400000));ev.push({act:'Route change / Split · '+h.techId,date:fmtNice(d),time:d.toTimeString().slice(0,8),user:VUSERS[(b+1)%VUSERS.length]});}
+  if(h.redel){ev.push({act:'Dispatched · Shipment '+h.redel.prev,date:fmtNice(new Date(today.getTime()-86400000)),time:'17:40:12',user:VUSERS[(b+2)%VUSERS.length]});
+    ev.push({act:'<span class="hl">Failed delivery → reset to Received · '+h.redel.reason+'</span>',date:fmtNice(h.redel.at),time:h.redel.at.toTimeString().slice(0,8),user:M().user.toUpperCase()});}
+  if(h.dispatched && h.shipDate){ev.push({act:'Dispatched · Shipment '+h.shipment,date:fmtNice(new Date(h.shipDate)),time:'17:40:12',user:VUSERS[(b+2)%VUSERS.length]});}
+  else if(h.dispatched){const d=new Date(today.getTime());ev.push({act:'Dispatched · Shipment '+h.shipment,date:fmtNice(d),time:d.toTimeString().slice(0,8),user:VUSERS[(b+2)%VUSERS.length]});}
+  return ev;
+}
+function obdReady(id){const rc=obdRecv(id);const inv=obd(id).invoiced;const reasons=[];if(rc.r<rc.n)reasons.push((rc.n-rc.r)+' HU not received');if(!inv)reasons.push('Invoice not created');return {ready:rc.r===rc.n&&inv,rc,inv,reasons};}
+function scanValidation(c){const V=S.validation;const h=huGuard(c,m=>{V.msg=m;});if(!h){render();return;}V.hu=h.id;V.obd=h.obd;V.msg=null;if(V.tab==='details')V.tab='route';render();}
+function openVDetails(id){S.validation.obd=id;S.validation.tab='details';render();}
+
+function vHuBody(h){
+  const ev=huEvents(h);
+  return `<div class="card"><div class="row" style="margin-bottom:8px">${I.box}<b>Activity for ${h.id}</b></div>
+    ${ev.length?`<div class="timeline">${ev.map(e=>`<div><b>${e.act}</b><br><span class="muted small">${e.date} · ${e.time} · ${e.user}</span></div>`).join('')}</div>`:'<div class="small muted">No activity yet — this HU has not been received.</div>'}</div>`;
+}
+function vObdBody(id){
+  const o=obd(id), rc=obdRecv(id), rd=obdReady(id), hs=husOfObd(id);
+  return `<div class="card grid2 kv">
+      <div><div class="k">OBD Number</div><div class="v" style="font-size:15px">${id}</div></div>
+      <div><div class="k">Route (lane + route)</div><div class="v">${obdLane(id)}</div></div>
+      <div><div class="k">Package Count</div><div class="v">${rc.n}</div></div>
+      <div><div class="k">Received</div><div class="v" style="color:${rc.r===rc.n?'var(--green)':'var(--red)'}">${rc.r} / ${rc.n}</div></div>
+      <div><div class="k">Invoice Status</div><div class="v">${o.invoiced?'<span class="pill green">Created</span>':'<span class="pill red">No Invoice</span>'}</div></div>
+      <div><div class="k">Status</div><div class="v">${rd.ready?'<span class="pill green">Ready for Dispatch</span>':'<span class="pill red">Pending</span>'}</div></div>
+    </div>
+    <div class="card"><b>Handling Units in this OBD (${hs.length})</b>
+      <div class="hulist" style="margin-top:8px">${hs.map((h,i)=>{const ri=huRecvInfo(h);return `<div class="hurow"><span class="n">${i+1}</span><span class="code">${I.barcode} ${h.id}</span>${h.received?`<span class="pill green">${I.check} Received</span>`:`<span class="pill red">${I.xmark} Not received</span>`}</div>`;}).join('')}</div></div>
+    ${rd.ready?banner({type:'success',text:'OBD is fully received and invoiced — <b>ready for dispatch</b>.'}):banner({type:'warn',text:'<b>Pending:</b> '+rd.reasons.join(' · ')})}`;
+}
+function vRouteBody(h){
+  const lane=h.lane;
+  const obds=uniq(mkHus().filter(x=>x.lane===lane && !x.dispatched).map(x=>x.obd));
+  const ready=obds.filter(id=>obdReady(id).ready).length, pend=obds.length-ready;
+  let t=`<div class="summary">
+      <div><b style="font-size:14px">${lane}</b><span>Route</span></div>
+      <div><b>${obds.length}</b><span>Total OBDs</span></div>
+      <div><b style="color:var(--green)">${ready}</b><span>Ready</span></div>
+      <div><b style="color:var(--red)">${pend}</b><span>Pending</span></div>
+    </div>
+    <div class="card"><div class="between" style="margin-bottom:6px"><b>OBDs in this route (${obds.length})</b><span class="small muted">tap a row ›</span></div>
+    <div style="overflow-x:auto"><table class="t"><tr><th>OBD</th><th>Pkg</th><th>Recv</th><th>Invoice</th><th>Status</th><th></th></tr>
+    ${obds.map(id=>{const rc=obdRecv(id),rd=obdReady(id),o=obd(id);
+      return `<tr style="cursor:pointer" onclick="openVDetails('${id}')">
+        <td><b>${id}</b></td><td>${rc.n}</td><td>${rc.r}/${rc.n}</td>
+        <td>${o.invoiced?'<span class="pill green">Created</span>':'<span class="pill red">No Inv.</span>'}</td>
+        <td>${rd.ready?'<span class="pill green">Ready</span>':'<span class="pill red">Pending</span>'}</td>
+        <td style="text-align:right;color:var(--blue)">${I.chev}</td></tr>`;}).join('') || '<tr><td colspan="6" class="muted small">No open OBDs on this route.</td></tr>'}
+    </table></div></div>`;
+  return t;
+}
+function vDetailsBody(){
+  const id=S.validation.obd, o=obd(id), rc=obdRecv(id), rd=obdReady(id), hs=husOfObd(id);
+  return `<div class="small" style="margin:2px 2px 10px"><a href="#" onclick="S.validation.tab='route';render();return false" style="color:var(--blue);font-weight:600">Route Level</a> <span class="muted">› OBD Details</span></div>
+    <div class="card grid2 kv">
+      <div><div class="k">OBD Number</div><div class="v" style="font-size:16px">${id}</div></div>
+      <div><div class="k">Route</div><div class="v">${obdLane(id)}</div></div>
+      <div><div class="k">Package Count</div><div class="v">${rc.n}</div></div>
+      <div><div class="k">Received</div><div class="v" style="color:${rc.r===rc.n?'var(--green)':'var(--red)'}">${rc.r} / ${rc.n}</div></div>
+      <div><div class="k">Invoice Status</div><div class="v">${o.invoiced?'<span class="pill green">Created</span>':'<span class="pill red">No Invoice</span>'}</div></div>
+      <div><div class="k">Status</div><div class="v">${rd.ready?'<span class="pill green">Ready for Dispatch</span>':'<span class="pill red">Pending</span>'}</div></div>
+    </div>
+    <div class="card"><b>Handling Units in this OBD (${hs.length})</b>
+      <div style="overflow-x:auto;margin-top:8px"><table class="t"><tr><th>#</th><th>Handling Unit</th><th>Receiving Status</th><th>Date</th><th>Time</th><th>User</th></tr>
+      ${hs.map((h,i)=>{const ri=huRecvInfo(h);return `<tr><td>${i+1}</td><td><b>${h.id}</b></td><td>${h.received?'<span class="pill green">Received</span>':'<span class="pill red">Not received</span>'}</td><td>${h.received?ri.date:'—'}</td><td>${h.received?ri.time:'—'}</td><td style="font-size:11px">${h.received?ri.user:'—'}</td></tr>`;}).join('')}
+      </table></div></div>`;
+}
+SCREENS.validation = () => {
+  const V=S.validation;
+  if(!V.hu){ const d=mkHus().find(h=>h.received)||mkHus()[0]; if(d){V.hu=d.id;V.obd=d.obd;} }
+  if(V.tab==='details' && !V.obd) V.tab='route';
+  if(V.tab==='details') return {sub:'Validation Report', back:'home', body:vDetailsBody()};
+  const h=findHu(V.hu);
+  let body=`<div class="tabs">
+      <button class="${V.tab==='hu'?'on':''}" onclick="S.validation.tab='hu';render()">${I.box} HU Status</button>
+      <button class="${V.tab==='obd'?'on':''}" onclick="S.validation.tab='obd';render()">${I.doc} OBD Status</button>
+      <button class="${V.tab==='route'?'on':''}" onclick="S.validation.tab='route';render()">${I.route} Route Level</button>
+    </div>
+    <div class="card"><div class="lbl">Scan a handling unit</div>${scanField('scanVal','Scan handling unit barcode','vhu','data-autofocus')}
+      ${h?`<div class="hint">${I.info}<span>Showing <b>${h.id}</b> · OBD ${h.obd} · ${h.lane}</span></div>`:''}</div>`;
+  body += banner(V.msg);
+  if(!h){ body += `<div class="card muted small" style="text-align:center;padding:26px">Scan a handling unit to validate.</div>`; }
+  else if(V.tab==='hu'){ body += vHuBody(h); }
+  else if(V.tab==='obd'){ body += vObdBody(h.obd); }
+  else { body += vRouteBody(h); }
+  return {sub:'Validation Report', back:'home', body};
+};
+
+/* ================= ACTIONS ================= */
+function scan(raw,target){
+  const code=String(raw||'').trim().toUpperCase(); if(!code) return;
+  if (!target){ const el=document.querySelector('#screen [data-scan]'); target=el?el.dataset.scan:null; }
+  if (!target){ toast('No scan field on this screen'); return; }
+  ({rlane:scanReceiveLane, rhu:scanReceiveHu, slane:scanSplitLane, clane:scanChangeLane, newlane:setNewLane, dhu:scanDispatch, vhu:scanValidation, rdhu:scanRedel, ssearch:c=>{S.split.search=c;render();}, csearch:c=>{S.change.search=c;render();}})[target](code);
+}
+const isLane = c => /^L\d{2}-R\d{2}$/.test(c);
+function huGuard(code, msgSetter){
+  const h=findHu(code);
+  if (!h){ msgSetter({type:'error',text:`<b>${code}</b> not found in the offline database. Try <b>Sync</b>; it may not be replicated to BTP HANA yet.`}); return null; }
+  if (h.mk!==S.mk){ msgSetter({type:'error',text:`<b>${code}</b> belongs to plant ${MARKETS[h.mk].plant} (${MARKETS[h.mk].name}). Your IAS group ${M().ias} can't see or process it.`}); addLog('IAS',`Blocked: ${M().user} tried to access HU ${code} of plant ${MARKETS[h.mk].plant}`); return null; }
+  return h;
+}
+function scanReceiveLane(c){
+  if (!LANES.includes(c)){ S.receive.msg={type:'error',text:`<b>${c}</b> is not a valid lane + route barcode.`}; render(); return; }
+  S.receive={lane:c,last:null,lastHu:null,count:0,msg:{type:'info',text:`Lane + route <b>${c}</b> set. Now scan packages one after another.`}}; render();
+}
+function scanReceiveHu(c){
+  const R=S.receive;
+  if (isLane(c)){ scanReceiveLane(c); return; }
+  const h=huGuard(c,m=>{R.msg=m;}); if(!h){ render(); return; }
+  if (h.dispatched){ R.msg={type:'error',text:`<b>${c}</b> was already dispatched on shipment ${h.shipment}.`}; render(); return; }
+  if (h.lane!==R.lane){ R.msg={type:'error',text:`<b>Route mismatch.</b> ${c} (OBD ${h.obd}) belongs to <b>${h.lane}</b>, not <b>${R.lane}</b>. Put the carton aside, or use Change Route.`}; R.last=h.obd; R.lastHu=null; render(); return; }
+  R.last=h.obd; R.lastHu=h.id;
+  if (h.received){ R.msg={type:'warn',text:`<b>${c}</b> is already received. No change made.`}; render(); return; }
+  h.received=true; R.count++;
+  const r=obdRecv(h.obd);
+  R.msg = r.r===r.n ? {type:'success',text:`<b>${c}</b> received. OBD ${h.obd} is complete (${r.r}/${r.n}).`} : {type:'success',text:`<b>${c}</b> received · ${r.n-r.r} package(s) still outstanding for this OBD.`};
+  addLog('HANA',`HU ${c} received & tagged to lane + route ${R.lane} (OBD ${h.obd}, ${r.r}/${r.n})`);
+  render();
+}
+function scanSplitLane(c){
+  if (!isLane(c)){ const h=findHu(c); if (S.split.lane && h && h.mk===S.mk){ S.split.search=h.id; render(); return; } S.split.msg={type:'error',text:`<b>${c}</b> is not a valid lane + route.`}; render(); return; }
+  if (!LANES.includes(c)){ S.split.msg={type:'error',text:`<b>${c}</b> is not a known lane + route.`}; render(); return; }
+  S.split={lane:c,sel:[],search:'',open:[],msg:null}; render();
+}
+function confirmSplit(){
+  const P=S.split, m=M();
+  const next = `SPL-${S.mk}-${String(S.tidSeq[S.mk]+1).padStart(4,'0')}`;
+  const moveHus = mkHus().filter(h=>P.sel.includes(h.obd)&&h.lane===P.lane&&!h.techId&&!h.dispatched);
+  const remain = mkHus().filter(h=>h.lane===P.lane&&!h.techId&&!h.dispatched).length - moveHus.length;
+  S.modal={html:`<h3>Split route ${P.lane}?</h3>
+    <div class="card" style="margin:0 0 8px"><div class="between"><span>New mini-batch</span><span class="pill purple">${next}</span></div><div class="small muted" style="margin-top:4px">${P.sel.length} OBD · ${moveHus.length} HU · stays under ${P.lane}</div></div>
+    <div class="card" style="margin:0"><div class="between"><span>Parent group</span><span class="pill blue">${P.lane}</span></div><div class="small muted" style="margin-top:4px">${remain} HU remain, no technical ID</div></div>
+    <p class="small muted">In Dispatch, scanning any one HU of the mini-batch brings in the whole mini-batch.</p>
+    <div class="acts"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="doSplit()">Split</button></div>`};
+  render();
+}
+function doSplit(){
+  const P=S.split; S.tidSeq[S.mk]++;
+  const tid=`SPL-${S.mk}-${String(S.tidSeq[S.mk]).padStart(4,'0')}`;
+  const hs=mkHus().filter(h=>P.sel.includes(h.obd)&&h.lane===P.lane&&!h.techId&&!h.dispatched);
+  hs.forEach(h=>h.techId=tid);
+  addLog('HANA',`Technical ID ${tid} assigned to ${hs.length} HU(s) / ${P.sel.length} OBD(s) under parent ${P.lane}`);
+  S.split={lane:P.lane,sel:[],search:'',open:[],msg:{type:'success',text:`Mini-batch <b>${tid}</b> created with ${hs.length} HU. The rest stay in parent group ${P.lane}.`}};
+  S.modal=null; render();
+}
+function scanChangeLane(c){
+  const C=S.change;
+  if (!isLane(c)){ const h=findHu(c); if(h&&h.mk===S.mk){ if(!C.lanes.includes(h.lane)) C.lanes.push(h.lane); C.search=h.id; C.msg={type:'info',text:`HU ${h.id} found in OBD ${h.obd} (${h.lane}).`}; render(); return; } C.msg={type:'error',text:`<b>${c}</b> is not a valid lane + route or HU.`}; render(); return; }
+  if (!LANES.includes(c)){ C.msg={type:'error',text:`<b>${c}</b> is not a known lane + route.`}; render(); return; }
+  if (C.lanes.includes(c)){ C.msg={type:'warn',text:`${c} is already selected.`}; render(); return; }
+  C.lanes.push(c); C.msg=null;
+  const n=uniq(mkHus().filter(h=>h.lane===c&&!h.dispatched).map(h=>h.obd)).length;
+  toast(`${c} added · ${n} OBD(s)`); render();
+}
+function setNewLane(c){ S.change.newLane=c; render(); if(c) toast(`New lane + route: ${c}`); }
+function confirmChange(){
+  const C=S.change, nl=C.newLane.trim().toUpperCase();
+  if (!LANES.includes(nl)){ C.msg={type:'error',text:nl?`New lane + route <b>${esc(nl)}</b> is not valid.`:'Scan or enter the <b>new lane + route</b> first.'}; render(); return; }
+  const obds=uniq(mkHus().filter(h=>C.lanes.includes(h.lane)&&!h.dispatched).map(h=>h.obd)).filter(id=>!C.excl.includes(id));
+  if (obds.every(id=>obdLane(id)===nl)){ C.msg={type:'warn',text:`The selected OBDs are already on ${nl}.`}; render(); return; }
+  const inc=obds.filter(id=>{const r=obdRecv(id);return r.r<r.n;});
+  S.modal={html:`<h3>Move ${obds.length} OBD to ${nl}?</h3>
+    <div class="small">${obds.map(id=>`<div class="between" style="padding:4px 0;border-bottom:1px solid #f0f3f6"><b>${id}</b><span>${obdLane(id)} → <b>${nl}</b></span></div>`).join('')}</div>
+    ${C.excl.length?`<p class="small muted">${C.excl.length} excluded OBD(s) keep their current lane + route.</p>`:''}
+    ${inc.length?banner({type:'warn',text:`${inc.length} OBD(s) still have packages not yet received. Those packages will also be moved to ${nl}.`}):''}
+    <div class="acts"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="doChange()">Confirm move</button></div>`};
+  render();
+}
+function doChange(){
+  const C=S.change, nl=C.newLane.trim().toUpperCase();
+  const obds=uniq(mkHus().filter(h=>C.lanes.includes(h.lane)&&!h.dispatched).map(h=>h.obd)).filter(id=>!C.excl.includes(id));
+  let n=0; obds.forEach(id=>husOfObd(id).forEach(h=>{ if(h.lane!==nl){h.lane=nl;n++;} }));
+  addLog('HANA',`Lane + route changed for ${obds.length} OBD(s) / ${n} HU(s) from ${C.lanes.join(', ')} → ${nl}${C.excl.length?` · excluded: ${C.excl.join(', ')}`:''}`);
+  S.change={lanes:[],excl:[],newLane:'',search:'',open:[],msg:{type:'success',text:`${obds.length} OBD(s) moved to <b>${nl}</b>.`}};
+  S.modal=null; render();
+}
+function scanDispatch(c){
+  const D=S.dispatch;
+  const h=huGuard(c,m=>{D.msg=m;}); if(!h){ render(); return; }
+  if (h.dispatched){ D.msg={type:'error',text:`<b>${c}</b> was already dispatched on shipment ${h.shipment}.`}; render(); return; }
+  const b = h.techId ? {type:'tid',id:h.techId} : {type:'lane',id:h.lane};
+  if (D.batches.some(x=>x.id===b.id)){ D.msg={type:'info',text:`That batch (${b.id}) is already on this shipment.`}; render(); return; }
+  D.batches.push(b);
+  const hs=mkHus().filter(x=>!x.dispatched&&(b.type==='tid'?x.techId===b.id:(x.lane===b.id&&!x.techId)));
+  const note = b.type==='tid' ? `HU has technical ID <b>${b.id}</b>, so the whole mini-batch was added` : `HU has no technical ID, so all of lane + route <b>${b.id}</b> was added (mini-batches left out)`;
+  D.msg={type:'success',text:`${note}: ${uniq(hs.map(x=>x.obd)).length} OBD · ${hs.length} HU.`};
+  if (!h.received) D.msg.text += ` <br>⚠ ${c} itself is not received yet.`;
+  D.tab='pk'; render();
+}
+function removeBatch(id){ S.dispatch.batches=S.dispatch.batches.filter(b=>b.id!==id); S.dispatch.msg=null; render(); }
+function tryDispatch(){
+  const D=S.dispatch, fs=formState();
+  if (fs.any){ D.showErr=true; D.tab='sd'; D.msg={type:'error',text:'Fill in the shipment details first: Shipment Type, a valid Shipment Route and TPPT are required.'}; render(); return; }
+  const groups=dispatchGroups().filter(g=>!D.excl.includes(g.obd));
+  const inc=groups.filter(g=>{const r=obdRecv(g.obd);return r.r<r.n;});
+  const ninv=groups.filter(g=>!obd(g.obd).invoiced);
+  const hus=groups.reduce((a,g)=>a+g.hus.filter(h=>h.received).length,0);
+  const warn=[];
+  if (inc.length) warn.push(`<b>${inc.length} incomplete OBD(s)</b> (${inc.map(g=>g.obd).join(', ')}): packages not received yet will stay open.`);
+  if (ninv.length) warn.push(`<b>${ninv.length} OBD(s) not invoiced</b> (${ninv.map(g=>g.obd).join(', ')}): the invoice may not be replicated from SAP to BTP HANA yet.`);
+  const f=D.form;
+  S.modal={html:`<h3>Create shipment in SAP?</h3>
+    <div class="card grid2 kv" style="margin-bottom:8px"><div><div class="k">OBD / HU</div><div class="v">${groups.length} / ${hus}</div></div><div><div class="k">Route</div><div class="v">${fs.route}</div></div><div><div class="k">Type</div><div class="v">${f.type}</div></div><div><div class="k">TPPT</div><div class="v">${f.tppt}</div></div><div><div class="k">Status</div><div class="v">${f.status||'—'}</div></div><div><div class="k">Excluded</div><div class="v">${D.excl.filter(x=>dispatchGroups().some(g=>g.obd===x)).length} OBD</div></div></div>
+    ${warn.length?banner({type:'warn',text:warn.join('<br><br>')+'<br><br>You can go back and exclude these OBDs, or carry on.'}):banner({type:'success',text:'No flags. All OBDs are fully received and invoiced.'})}
+    <div class="acts"><button class="btn ghost" onclick="closeModal()">Back</button><button class="btn primary" onclick="doDispatch()">Create shipment</button></div>`};
+  render();
+}
+function doDispatch(){
+  S.modal=null; S.loading='Validating in BTP HANA & creating shipment in SAP…'; render();
+  setTimeout(()=>{
+    const D=S.dispatch, m=M(), fs=formState(), f={...D.form, route:fs.route};
+    const all=dispatchGroups(), groups=all.filter(g=>!D.excl.includes(g.obd)), exGroups=all.filter(g=>D.excl.includes(g.obd));
+    const no='00'+String(Math.floor(10000000+Math.random()*89999999));
+    let n=0; const left=[];
+    groups.forEach(g=>{ g.hus.forEach(h=>{ if(h.received){h.dispatched=true;h.shipment=no;n++;} }); const out=husOfObd(g.obd).length; if(out) left.push(`OBD ${g.obd}: ${out} HU still outstanding (redelivery handling to be designed)`); });
+    exGroups.forEach(g=>{
+      const tid=obdTid(g.obd);
+      if (tid && S.settings.tidOnExclude==='clear'){ husOfObd(g.obd).forEach(h=>h.techId=null); addLog('HANA',`Excluded OBD ${g.obd}: technical ID ${tid} cleared → returned to parent ${g.hus[0].lane}`); }
+      else addLog('HANA',`Excluded OBD ${g.obd} returned to its group ${g.hus[0].lane}${tid?' (technical ID '+tid+' kept)':''}`);
+    });
+    const lanes=uniq(groups.flatMap(g=>g.hus.map(h=>h.lane)));
+    const ev=[`BTP HANA checks passed: route ${f.route}, TPPT ${f.tppt.split(' ')[0]}`,
+              `SAP shipment <b>${no}</b> created · ${groups.length} OBD / ${n} HU`];
+    const redelInfo = groups.filter(g=>g.hus.some(h=>h.redel)).map(g=>({obd:g.obd, prev:g.hus.find(h=>h.redel).redel.prev}));
+    redelInfo.forEach(r=>{ ev.push(`<span class="hl">Re-delivery: OBD ${r.obd} on new shipment ${no} (previous ${r.prev})</span>`); addLog('SAP',`<span class="hl">Re-delivery shipment ${no} created for OBD ${r.obd} (previous shipment ${r.prev})</span>`); });
+    groups.forEach(g=>g.hus.forEach(h=>{ if(h.redel && h.dispatched) h.redel.newShip=no; }));
+    addLog('HANA',`Pre-submit validation OK · route ${f.route} valid for ${m.plant}`);
+    addLog('SAP',`Shipment ${no} created · ${f.type.split(' ')[0]} · ${groups.length} OBD · status ${f.status||'—'}`);
+    if (m.output==='PlanetPress'){ ev.push('Shipment XML sent to <b>PlanetPress</b> for printing (Hong Kong output)'); addLog('PlanetPress',`Shipment ${no} XML sent to PlanetPress`); }
+    else { ev.push('Shipment documents sent <b>directly from SAP</b> output'); addLog('SAP',`Output for shipment ${no} issued via SAP output determination`); }
+    if (f.status==='Shipment Completion'||f.status==='Shipment Start'){ ev.push(`Status "${f.status}" sent to 3PL / 4i`); addLog('T4i',`Shipment ${no} status "${f.status}" sent to 3PL / 4i`); }
+    else ev.push(`Status "${f.status||'—'}" does not trigger the 3PL / 4i hand-off yet`);
+    S.last={no,form:f,obds:groups.map(g=>g.obd),hus:n,lanes,events:ev,left,redel:redelInfo};
+    S.dispatch=freshSession(S.mk).dispatch; S.loading=null; S.screen='done'; render();
+  },1400);
+}
+function doSync(){
+  if (S.syncing) return; S.syncing=true; render();
+  setTimeout(()=>{ S.syncing=false; S.lastSync=new Date(); addLog('HANA',`Offline DB synced: ${countMk('hus')} HUs / ${countMk('obds')} OBDs for plant ${M().plant} (IAS group ${M().ias})`); toast(`Synced · plant ${M().plant} only`); render(); },1100);
+}
+function openSwitch(){
+  S.modal={html:`<h3>Switch user</h3><p class="small muted" style="margin-top:-4px">Each user only gets data for their own market / plant (IAS user group + plant tag on HUs in BTP HANA).</p>
+    ${Object.entries(MARKETS).map(([k,m])=>`<button class="userpick ${k===S.mk?'on':''}" onclick="switchUser('${k}')"><div class="avatar">${m.user[0].toUpperCase()}</div><div style="flex:1"><b>${m.user}</b><div class="small muted">${m.name} · ${m.plant} · ${m.device}</div></div>${k==='HK'?'<span class="pill amber">Current app</span>':k==='PH'?'<span class="pill blue">Onboarding</span>':'<span class="pill green">Redesign</span>'}</button>`).join('')}
+    <div class="acts"><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`};
+  render();
+}
+function switchUser(k){
+  if (k===S.mk){ closeModal(); return; }
+  S.mk=k; Object.assign(S, freshSession(k)); S.modal=null; S.screen='home'; S.lastSync=new Date();
+  addLog('IAS',`Switched user → ${MARKETS[k].user} · IAS group ${MARKETS[k].ias}`);
+  addLog('HANA',`Offline DB reloaded: plant ${MARKETS[k].plant} only (${countMk('hus')} HUs). Other markets' data removed from device.`);
+  render(); toast(`Logged in as ${MARKETS[k].user}`);
+}
+
+/* ================= SIDE PANEL ================= */
+function codes(){
+  const hs=mkHus(), laneA=hs.filter(h=>h.lane==='L01-R05'||h.obd&&false);
+  const orig=[...DB.hus.filter(h=>h.mk===S.mk)];
+  const byObd = uniq(orig.map(h=>h.obd));
+  const A=orig.slice(0,12), B=orig.slice(12,17), Cc=orig.slice(17);
+  const other = DB.hus.find(h=>h.mk!==S.mk);
+  return {first:A[0].id, lastA:A[11].id, beforeLast:A[10].id, wrong:B[0].id, other:other.id,
+          obdC:byObd[2], obdD:byObd[3], obdG2:byObd[7], hB:B[0].id, hSplit:A[5].id,
+          rdObd:byObd[8], rdHu:orig.find(h=>h.obd===byObd[8]).id};
+}
+function stepStatus(){
+  const hs=mkHus(), c=codes();
+  const A=hs.filter(h=>DB.obds.find(o=>o.id===h.obd) && ['L01-R05'].includes(h.lane)||h.techId);
+  const recvA = DB.hus.filter(h=>h.mk===S.mk).slice(0,12).filter(h=>h.received).length;
+  return {
+    home: true,
+    receive: recvA>=6,
+    split: hs.some(h=>h.techId),
+    change: hs.some(h=>h.lane==='L05-R04'),
+    dispatch: hs.some(h=>h.dispatched && h.shipment!==SEED_SHIP),
+    redelivery: hs.some(h=>h.redel && h.redel.newShip),
+    validation: S.screen==='validation' || S._visitedVal
+  };
+}
+function renderSide(){
+  if (S.screen==='validation') S._visitedVal=true;
+  const c=codes(), st=stepStatus(), m=M();
+  const cur = {home:'home',receive:'receive',route:'split',split:'split',change:'change',dispatch:'dispatch',done:'dispatch',validation:'validation',redelivery:'redelivery'}[S.screen];
+  const steps=[
+    ['home','Home & common bar',`Every screen shows <b>PROD/QAS</b>, the <b>version</b>, <b>Sync</b> and <b>Switch user</b>. Staging is now part of Receive, Merging is gone, and there is a new <span class="hl">Re-Delivery</span> tile. Try <i>Switch user</i> to see that each market only gets its own data.`],
+    ['receive','Receive = Receive + Staging',`Scan lane + route <code>L01-R05</code>, then keep scanning HUs <code>${c.first}</code>…<code>${c.beforeLast}</code>. Leave <code>${c.lastA}</code> out so one OBD stays incomplete. Scan <code>${c.wrong}</code> to see the <b>route-mismatch</b> error, and <code>${c.other}</code> to see the <b>market block</b>.`],
+    ['split','Change Route → Split Route',`Scan <code>L01-R05</code>, tick OBD <code>${c.obdC}</code> (not invoiced) and <code>${c.obdD}</code> (incomplete), then <b>Split</b>. They get a technical ID <code>SPL-${S.mk}-0001</code> and the rest stay in the parent group.`],
+    ['change','Change Route → Change Lane + Route',`Scan <b>two</b> lanes, <code>L02-R03</code> and <code>L03-R01</code>, in one go. Tick <b>Exclude</b> on <code>${c.obdG2}</code>, set the new lane + route to <code>L05-R04</code>, then <b>Confirm</b>.`],
+    ['dispatch','Dispatch → SAP shipment',`Scan <code>${c.first}</code> (brings parent group L01-R05, without the mini-batch) and <code>${c.hB}</code> (brings L05-R04) to combine them. Check the <b>Incomplete</b> and <b>Not invoiced</b> flags, and exclude one OBD. Under <b>Shipment Details</b>, try route <code>XYZ</code> to see it rejected, then use <code>${Object.keys(m.routes)[0]}</code>, pick a type and TPPT, and <b>Dispatch</b>.`],
+    ['validation','Validation Report → OBD drill-down',`Scan an HU, then open <b>Route Level</b> and tap a row's <b>›</b> to drill into <b>OBD Details</b> (package count, invoice, and each HU's receive date / time / user). Also try <b>HU Status</b> (activity timeline) and <b>OBD Status</b>. <span class="openitem">Placement in-app vs BI report: TBC</span>`],
+    ['redelivery','Re-Delivery (NEW)',`OBD <code>${c.rdObd}</code> was dispatched yesterday on shipment <code>${SEED_SHIP}</code> but the delivery failed. Open <b>Re-Delivery</b>, scan <code>${c.rdHu}</code>, pick a failure reason and <b>Reset to Received</b>. Then in <b>Dispatch</b> scan <code>${c.rdHu}</code> again: the OBD comes back flagged <span class="pill delta">↺ Re-delivery</span>. Fill Shipment Details and dispatch to create the <b>new shipment</b>. Check <b>Validation → HU Status</b> for the reset in the timeline.`]
+  ];
+  document.getElementById('steps').innerHTML = steps.map((s,i)=>`<li class="${s[0]==='redelivery'?'delta-step':''} ${cur===s[0]?'cur':''} ${st[s[0]]&&s[0]!=='home'?'done':''}"><span class="num">${st[s[0]]&&s[0]!=='home'?'✓':i+1}</span><div class="txt"><b><a href="#" onclick="go('${s[0]}');return false" style="color:inherit">${s[1]}</a></b><br>${s[2]}</div></li>`).join('');
+
+  // barcodes
+  const bc=(code,desc,target,cls='')=>`<button class="bc ${cls}" onclick="scan('${code}','${target}')" title="Scan ${code}"><span class="bars"></span><span class="c">${code}</span>${desc?`<span class="d">${desc}</span>`:''}</button>`;
+  const grp=(t,items)=>`<div class="bcgroup"><div class="gt">${t}</div><div class="barcodes">${items}</div></div>`;
+  const lanesUsed = LANES.map(l=>({l,n:mkHus().filter(h=>h.lane===l&&!h.dispatched).length}));
+  const laneBtns=(target)=>lanesUsed.map(x=>bc(x.l,x.n?`${x.n} HU`:'empty',target)).join('');
+  let html='';
+  if (S.screen==='receive'){
+    if (!S.receive.lane) html=grp('Lane + route labels',laneBtns('rlane'));
+    else {
+      const hs=mkHus().filter(h=>h.lane===S.receive.lane&&!h.dispatched);
+      html=grp(`Cartons on ${S.receive.lane}`, hs.map(h=>bc(h.id,h.received?'received':'OBD '+h.obd.slice(-4),'rhu',h.received?'used':'')).join('')||'<span class="small muted">No HUs on this lane.</span>');
+      html+=grp('Test cases',bc(c.wrong,'wrong lane + route','rhu','test')+bc(c.other,'other market','rhu','test')+bc(M().huPre+'99999','not in DB','rhu','test'));
+    }
+  } else if (S.screen==='split'){
+    html=grp('Lane + route labels',laneBtns('slane'));
+    if (S.split.lane) html+=grp('Scan an HU to find its OBD',mkHus().filter(h=>h.lane===S.split.lane&&!h.techId&&!h.dispatched).slice(0,8).map(h=>bc(h.id,'OBD '+h.obd.slice(-4),'ssearch')).join(''));
+  } else if (S.screen==='change'){
+    html=grp('Add lane + route to selection',laneBtns('clane'))+grp('Set NEW lane + route',LANES.map(l=>bc(l,'new target','newlane')).join(''));
+  } else if (S.screen==='dispatch'){
+    const reps=[]; const seen=new Set();
+    mkHus().filter(h=>!h.dispatched).forEach(h=>{ const k=h.techId||h.lane; if(!seen.has(k)){seen.add(k);reps.push(h);} });
+    html=grp('One HU per batch',reps.map(h=>bc(h.id,h.techId?`mini-batch ${h.techId}`:(mkHus().some(x=>x.lane===h.lane&&!x.dispatched&&x.redel)?`<span class="hl">${h.lane} · re-delivery</span>`:`${h.lane} parent`),'dhu')).join('')||'<span class="small muted">Nothing left to dispatch.</span>');
+    html+=grp('Test cases',bc(c.other,'other market','dhu','test'));
+  } else if (S.screen==='validation'){
+    html=grp('Scan an HU to validate', mkHus().slice(0,8).map(h=>bc(h.id,h.dispatched?'dispatched':(h.received?'OBD '+h.obd.slice(-4):'not received'),'vhu',h.dispatched?'used':'')).join(''));
+    html+=grp('Test case',bc(c.other,'other market','vhu','test'));
+  } else if (S.screen==='redelivery'){
+    const seen=new Set(), reps=[];
+    mkHus().filter(h=>h.dispatched).forEach(h=>{ if(!seen.has(h.obd)){seen.add(h.obd);reps.push(h);} });
+    html=`<div class="bcgroup delta-box"><div class="gt">Dispatched OBDs – failed-delivery candidates (NEW)</div><div class="barcodes">${reps.map(h=>bc(h.id,'OBD '+h.obd.slice(-4)+' · shp '+h.shipment.slice(-4),'rdhu')).join('')||'<span class="small muted">No dispatched OBDs.</span>'}</div></div>`;
+    html+=grp('Test cases',bc(c.first,'not dispatched yet','rdhu','test')+bc(c.other,'other market','rdhu','test'));
+  } else if (S.screen==='route'){ html='<span class="small muted">Choose Split Route or Change Lane + Route.</span>'; }
+  else html='<span class="small muted">Open Receive, Change Route or Dispatch to see barcodes you can scan.</span>';
+  document.getElementById('barcodes').innerHTML=html;
+
+  const sysName={HANA:'BTP HANA',SAP:'SAP',IAS:'IAS',PlanetPress:'PlanetPress',APP:'App',T4i:'3PL / 4i'};
+  document.getElementById('log').innerHTML = S.log.map(l=>`<div><span class="tm">${l.t}</span><span class="sys ${l.sys}">${sysName[l.sys]}</span><span style="flex:1">${l.msg}</span></div>`).join('');
+
+  document.getElementById('settings').innerHTML = `
+    <div class="setrow"><span>Environment indicator</span><div class="seg"><button class="${S.env==='PROD'?'on':''}" onclick="S.env='PROD';render()">PROD</button><button class="${S.env==='QAS'?'on':''}" onclick="S.env='QAS';render()">QAS</button></div></div>
+    <div class="setrow"><span>Market / user</span><div class="seg">${Object.keys(MARKETS).map(k=>`<button class="${S.mk===k?'on':''}" onclick="switchUser('${k}')">${k}</button>`).join('')}</div></div>
+    <div class="setrow"><span>Technical ID when an OBD is excluded at Dispatch <span class="openitem">OPEN ITEM</span></span><div class="seg"><button class="${S.settings.tidOnExclude==='retain'?'on':''}" onclick="S.settings.tidOnExclude='retain';render()">Keep</button><button class="${S.settings.tidOnExclude==='clear'?'on':''}" onclick="S.settings.tidOnExclude='clear';render()">Clear</button></div></div>
+    <div class="setrow"><span>Start the demo again with fresh dummy data</span><button class="btn ghost sm" onclick="init(false)">Reset demo</button></div>`;
+}
+
+init(false);
+setInterval(()=>{ const sb=document.querySelector('.statusbar span'); if(sb) sb.textContent=nowT(); },30000);
+</script>
+</body>
+</html>
